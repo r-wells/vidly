@@ -3,9 +3,11 @@ import { getMovies } from "../services/fakeMovieService";
 import Pagination from "./common/pagination";
 import { paginate } from "../utils/paginate";
 import ListGroup from "./common/listgroup";
+import { Link } from "react-router-dom";
 import { getGenres } from "../services/fakeGenreService";
 import MoviesTable from "./moviesTable";
 import _ from "lodash";
+import Input from "./common/input";
 
 class Movies extends Component {
   state = {
@@ -13,7 +15,9 @@ class Movies extends Component {
     genres: [],
     currentPage: 1,
     pageSize: 4,
-    sortColumn: { path: "title", order: "asc" }
+    sortColumn: { path: "title", order: "asc" },
+    searchValue: "",
+    selectedGenre: null
   };
 
   componentDidMount() {
@@ -40,11 +44,26 @@ class Movies extends Component {
   };
 
   handleGenreSelect = genre => {
-    this.setState({ selectedGenre: genre, currentPage: 1 });
+    this.setState({ selectedGenre: genre, searchValue: "", currentPage: 1 });
   };
 
   handleSort = sortColumn => {
     this.setState({ sortColumn });
+  };
+
+  handleSearch = event => {
+    this.setState({
+      searchValue: event.target.value,
+      selectedGenre: null,
+      currentPage: 1
+    });
+    //console.log(this.state.searchValue);
+    // let movies = [...this.state.movies];
+    // movies.map(movie => {
+    //   return movie.title === this.state.searchValue;
+    // });
+    // this.setState({ movies });
+    // console.log(this.state.movies);
   };
 
   getPagedData = () => {
@@ -53,13 +72,18 @@ class Movies extends Component {
       currentPage,
       sortColumn,
       selectedGenre,
+      searchValue,
       movies: allMovies
     } = this.state;
 
-    const filtered =
-      selectedGenre && selectedGenre._id
-        ? allMovies.filter(m => m.genre._id === selectedGenre._id)
-        : allMovies;
+    let filtered = allMovies;
+    if (searchValue) {
+      filtered = allMovies.filter(m =>
+        m.title.toLowerCase().startsWith(searchValue.toLowerCase())
+      );
+    } else if (selectedGenre && selectedGenre._id) {
+      filtered = allMovies.filter(m => m.genre._id === selectedGenre);
+    }
 
     const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
 
@@ -84,7 +108,19 @@ class Movies extends Component {
 
     return (
       <React.Fragment>
+        <Link
+          to="/movies/new"
+          className="btn btn-primary"
+          style={{ marginBottom: 20 }}
+        >
+          New Movie
+        </Link>
         <p>Showing {totalCount} movies in the database.</p>
+        <Input
+          placeholder="Search..."
+          value={this.state.value}
+          onChange={this.handleSearch}
+        />
         <div className="row">
           <div className="col-2">
             <ListGroup
